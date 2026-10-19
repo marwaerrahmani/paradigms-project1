@@ -1,0 +1,39 @@
+@startuml
+skinparam shadowing false
+title Message sequence — join, chat, allUsers, leave
+
+actor User
+participant "ClientView" as View
+participant "ChatClient" as Model
+participant "ChatServer" as Server
+participant "Other clients" as Others
+
+User -> View : username, or blank\nJoin chat
+View -> Model : connect(host, port, username)
+Model -> Server : TCP connect
+Model -> Server : JOIN|Alice
+Server -> Server : log "Welcome Alice"
+Server -> Model : WELCOME|Alice|ACTIVE
+Server -> Others : SYS|Alice joined the chat.
+Model -> View : onWelcome
+
+User -> View : "hello" + SEND or Enter
+View -> Model : submit("hello")
+Model -> Server : MSG|hello
+Server -> Model : CHAT|12:00:01|Alice|hello
+Server -> Others : CHAT|12:00:01|Alice|hello
+Model -> View : onChat
+
+User -> View : allUsers
+View -> Model : submit("allUsers")
+Model -> Server : CMD|allUsers
+Server -> Model : USERS|Alice|Bob
+note right of Others : no USERS line
+
+User -> View : bye, end, or LEAVE
+View -> Model : disconnect()
+Model -> Server : CMD|leave
+Server -> Model : BYE|Goodbye
+Server -> Others : SYS|Alice left the chat.
+Server -> Server : log "Waiting for Client"
+@enduml

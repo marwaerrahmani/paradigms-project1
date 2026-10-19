@@ -1,0 +1,33 @@
+@startuml
+skinparam shadowing false
+title Use cases
+
+actor User
+actor "Server operator" as Operator
+
+rectangle "Multi-client TCP chat" {
+  usecase "Join with a username" as UC1
+  usecase "Join in READ-ONLY MODE" as UC2
+  usecase "Send a group message" as UC3
+  usecase "List active users (allUsers)" as UC4
+  usecase "Leave (end, bye, or LEAVE)" as UC5
+  usecase "Watch the client list" as UC6
+  usecase "Read the activity log" as UC7
+}
+
+User --> UC1
+User --> UC2
+User --> UC3
+User --> UC4
+User --> UC5
+Operator --> UC6
+Operator --> UC7
+UC3 ..> UC1 : <<include>>
+
+note right of UC2
+  An empty username still connects.
+  The user can receive messages,
+  run allUsers, and leave.
+  SEND of a normal message is refused.
+end note
+@enduml

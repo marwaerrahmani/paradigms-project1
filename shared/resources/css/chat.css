@@ -1,0 +1,209 @@
+.root, .server-root, .client-root {
+    -fx-background-color: #121614;
+    -fx-font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+    -fx-font-size: 14px;
+}
+
+.server-root .label, .client-root .label {
+    -fx-text-fill: #e6efe9;
+}
+
+.eyebrow {
+    -fx-text-fill: #d7f171;
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+}
+
+.title {
+    -fx-font-size: 28px;
+    -fx-font-weight: 700;
+}
+
+.section-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
+}
+
+.hint {
+    -fx-text-fill: #93a39a;
+    -fx-font-size: 12px;
+}
+
+.error {
+    -fx-text-fill: #e07a5f;
+    -fx-font-size: 13px;
+}
+
+.card, .panel {
+    -fx-background-color: #1c2421;
+    -fx-background-radius: 16;
+    -fx-border-color: #2c3833;
+    -fx-border-radius: 16;
+    -fx-border-width: 1;
+    -fx-padding: 16;
+}
+
+.card {
+    -fx-padding: 28 26 24 26;
+}
+
+.status-pill {
+    -fx-background-color: #121614;
+    -fx-background-radius: 999;
+    -fx-border-color: #2c3833;
+    -fx-border-radius: 999;
+    -fx-padding: 6 12 6 10;
+}
+
+.status-dot {
+    -fx-fill: #5c6770;
+    -fx-stroke: transparent;
+}
+
+.status-dot.online {
+    -fx-fill: #3dd68c;
+}
+
+.status-label {
+    -fx-font-weight: 700;
+}
+
+.badge {
+    -fx-background-color: #3a3324;
+    -fx-text-fill: #e6b35a;
+    -fx-background-radius: 999;
+    -fx-padding: 4 10 4 10;
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+}
+
+.text-field, .text-area {
+    -fx-background-color: #121614;
+    -fx-text-fill: #e6efe9;
+    -fx-prompt-text-fill: #6e7f77;
+    -fx-highlight-fill: #d7f171;
+    -fx-highlight-text-fill: #142018;
+    -fx-background-radius: 10;
+    -fx-border-color: #2c3833;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 10 12 10 12;
+}
+
+.text-field:focused, .text-area:focused {
+    -fx-border-color: #d7f171;
+    -fx-background-color: #121614;
+}
+
+.text-area .content {
+    -fx-background-color: #121614;
+}
+
+.log-area {
+    -fx-font-family: "Cascadia Mono", Consolas, monospace;
+    -fx-font-size: 13px;
+    -fx-control-inner-background: #121614;
+}
+
+.button {
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 10 16 10 16;
+    -fx-font-weight: 700;
+    -fx-cursor: hand;
+}
+
+.button.primary {
+    -fx-background-color: #d7f171;
+    -fx-text-fill: #142018;
+}
+
+.button.primary:hover {
+    -fx-background-color: #e4f79a;
+}
+
+.button.danger {
+    -fx-background-color: transparent;
+    -fx-border-color: #e07a5f;
+    -fx-text-fill: #e07a5f;
+    -fx-border-width: 1.2;
+}
+
+.button.danger:hover {
+    -fx-background-color: #3a2a26;
+}
+
+.button.ghost {
+    -fx-background-color: transparent;
+    -fx-border-color: #3d4f48;
+    -fx-text-fill: #e6efe9;
+    -fx-border-width: 1;
+}
+
+.button:disabled {
+    -fx-opacity: 0.45;
+}
+
+.list-view.user-list, .list-view.known-users {
+    -fx-background-color: transparent;
+    -fx-control-inner-background: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.list-view.user-list .list-cell, .list-view.known-users .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 4 0 4 0;
+    -fx-text-fill: #e6efe9;
+}
+
+.list-view .placeholder .label {
+    -fx-text-fill: #93a39a;
+}
+
+.scroll-pane.transcript-scroll {
+    -fx-background-color: transparent;
+    -fx-background: #1c2421;
+    -fx-border-color: transparent;
+}
+
+.scroll-pane.transcript-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:vertical .thumb {
+    -fx-background-color: #3d4f48;
+    -fx-background-radius: 6;
+}
+
+.scroll-bar .track {
+    -fx-background-color: transparent;
+}
+
+.bubble {
+    -fx-background-radius: 12;
+    -fx-padding: 8 12 8 12;
+}
+
+.bubble-other {
+    -fx-background-color: #2a3530;
+}
+
+.bubble-self {
+    -fx-background-color: #31401a;
+}
+
+.bubble-text {
+    -fx-font-size: 14px;
+}
+
+.bubble-meta {
+    -fx-text-fill: #93a39a;
+    -fx-font-size: 11px;
+}
+
+.system-line {
+    -fx-text-fill: #93a39a;
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+}

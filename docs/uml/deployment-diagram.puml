@@ -1,0 +1,37 @@
+@startuml
+skinparam shadowing false
+title Deployment diagram — TCP/IP chat
+
+node "Server host" as serverHost {
+  artifact "TCPServer.jar" as serverJar
+  artifact "server.properties" as serverProps
+  component "JVM + JavaFX" as serverJvm
+  component "ChatServer\nbind 0.0.0.0\nTCP port 3000" as chatServer
+  serverJvm --> serverJar
+  serverJvm --> serverProps
+  serverJvm --> chatServer
+}
+
+node "Client host A" as clientA {
+  artifact "TCPClient.jar" as clientJarA
+  component "ChatClient\nAlice" as alice
+  clientJarA --> alice
+}
+
+node "Client host B" as clientB {
+  artifact "TCPClient.jar" as clientJarB
+  component "ChatClient\nBob or read-only guest" as bob
+  clientJarB --> bob
+}
+
+alice --> chatServer : TCP/IP socket\nJOIN | MSG | CMD
+bob --> chatServer : TCP/IP socket\nJOIN | MSG | CMD
+chatServer --> alice : WELCOME, CHAT,\nSYS, USERS, BYE
+chatServer --> bob : WELCOME, CHAT,\nSYS, BYE
+
+note right of chatServer
+  One process accepts many sockets.
+  Each socket is served by a virtual thread.
+  allUsers is returned only to the asker.
+end note
+@enduml

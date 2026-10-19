@@ -1,0 +1,125 @@
+@startuml
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+title Multi-client TCP chat — class diagram
+
+package "tcp-server" {
+  class TCPServer <<entry point>> {
+    +main(args)
+  }
+  class ServerApplication {
+    +start(stage)
+    +stop()
+  }
+  class ServerView {
+    +onLog(message)
+    +onClientsChanged(clients)
+    +onStateChanged(running, bind, port)
+  }
+  class ChatServer {
+    +start()
+    +stop()
+    +addListener(listener)
+    -acceptLoop()
+    -broadcast(line)
+  }
+  class ClientSession {
+    +run()
+    -send(line)
+  }
+  class ConnectedClient {
+    +displayName
+    +readOnly
+    +colorHex
+    +listLabel()
+  }
+  interface ServerListener {
+    +onLog(message)
+    +onClientsChanged(clients)
+    +onStateChanged(...)
+  }
+  class ServerConfig {
+    +bindAddress
+    +port
+    +load()
+  }
+}
+
+package "shared" {
+  class Protocol {
+    +join(username)
+    +message(text)
+    +command(name)
+    +chat(time, user, text)
+    +users(names)
+  }
+  class ConfigFiles {
+    +load(fileName, anchor)
+  }
+}
+
+package "tcp-client" {
+  class TCPClient <<entry point>> {
+    +main(args)
+  }
+  class ClientApplication {
+    +start(stage)
+  }
+  class ClientView {
+    +onWelcome(name, readOnly)
+    +onChat(time, user, text)
+    +onUsers(users)
+  }
+  class ChatClient {
+    +connect(host, port, username)
+    +submit(text)
+    +disconnect()
+  }
+  class ClientListener {
+    +onWelcome(...)
+    +onChat(...)
+    +onSystem(text)
+    +onDisconnected(reason)
+  }
+  enum InputIntent {
+    CHAT
+    LIST_USERS
+    LEAVE
+  }
+  class ClientConfig {
+    +host
+    +port
+    +load(args)
+  }
+}
+
+TCPServer --> ServerApplication
+ServerApplication --> ServerView
+ServerApplication --> ChatServer
+ServerApplication --> ServerConfig
+ServerView ..|> ServerListener
+ServerView --> ChatServer : stop on close
+ChatServer --> ServerListener : notifies
+ChatServer "1" *-- "*" ClientSession : virtual thread
+ChatServer --> ConnectedClient
+ChatServer --> Protocol
+ClientSession --> ChatServer
+ServerConfig --> ConfigFiles
+
+TCPClient --> ClientApplication
+ClientApplication --> ClientView
+ClientApplication --> ClientConfig
+ClientView ..|> ClientListener
+ClientView --> ChatClient
+ChatClient --> ClientListener : notifies
+ChatClient --> Protocol
+ChatClient --> InputIntent
+ClientConfig --> ConfigFiles
+
+note bottom of ChatServer
+  Model classes do not import JavaFX.
+  The view implements the listener and
+  hops to the JavaFX thread itself.
+end note
+@enduml
