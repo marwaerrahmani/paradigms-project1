@@ -11,7 +11,7 @@ Record the screen with the IDE and the running apps. Speak while you show the co
 
 ## 0:35 – 1:10 Server
 
-1. Open `ChatServer`. Show `Thread.ofVirtual()` in `start` and in the accept loop.
+1. Open `ChatServer` and `WorkerThread`. Show `Thread.ofVirtual().start(task)` and `readUTF` / `writeUTF`.
 2. Show `join`: empty username becomes `Guest-n` and read-only; a real name must be unique.
 3. Show `onMessage`: the server adds the time and username, then broadcasts `CHAT|...` to every connection.
 4. Show the log lines `Server Started`, `Waiting for Client`, and `Welcome Alice`.

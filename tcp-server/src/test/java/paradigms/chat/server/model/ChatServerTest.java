@@ -4,15 +4,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import paradigms.chat.protocol.Protocol;
 
-import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -98,7 +95,6 @@ class ChatServerTest {
             bob.send(Protocol.join("Bob"));
             alice.readMatching(Protocol.WELCOME);
             bob.readMatching(Protocol.WELCOME);
-            alice.readMatching(Protocol.SYS);
 
             alice.send(Protocol.command(Protocol.CMD_ALL_USERS));
             List<String> names = Protocol.parseUsers(alice.readMatching(Protocol.USERS));
@@ -154,7 +150,6 @@ class ChatServerTest {
             bob.send(Protocol.join("Bob"));
             alice.readMatching(Protocol.WELCOME);
             bob.readMatching(Protocol.WELCOME);
-            alice.readMatching(Protocol.SYS);
 
             alice.send(Protocol.command(Protocol.CMD_LEAVE));
             assertTrue(alice.readMatching(Protocol.BYE).startsWith("BYE|"));
@@ -210,19 +205,20 @@ class ChatServerTest {
 
     private static final class Peer implements AutoCloseable {
         private final Socket socket;
-        private final BufferedReader in;
-        private final PrintWriter out;
+        private final DataInputStream dis;
+        private final DataOutputStream dout;
 
         Peer(String host, int port) throws IOException {
             socket = new Socket(host, port);
             socket.setTcpNoDelay(true);
             socket.setSoTimeout(3000);
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-            out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
+            dis = new DataInputStream(socket.getInputStream());
+            dout = new DataOutputStream(socket.getOutputStream());
         }
 
-        void send(String line) {
-            out.println(line);
+        void send(String msg) throws IOException {
+            dout.writeUTF(msg);
+            dout.flush();
         }
 
         String readMatching(String prefix) throws IOException {
@@ -237,36 +233,28 @@ class ChatServerTest {
             socket.setSoTimeout(400);
             List<String> lines = new ArrayList<>();
             try {
-                String line;
-                while ((line = in.readLine()) != null) {
-                    lines.add(line);
+                while (true) {
+                    lines.add(dis.readUTF());
                 }
-            } catch (SocketTimeoutException expected) {
+            } catch (SocketTimeoutException | EOFException expected) {
                 return lines;
             }
-            return lines;
         }
 
         private String readMatching(java.util.function.Predicate<String> match, String description) throws IOException {
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
             while (System.nanoTime() < deadline) {
-                String line = in.readLine();
-                if (line == null) {
+                String msg;
+                try {
+                    msg = dis.readUTF();
+                } catch (EOFException ex) {
                     throw new EOFException("Connection closed while waiting for " + description);
                 }
-                if (match.test(line)) {
-                    return line;
+                if (match.test(msg)) {
+                    return msg;
                 }
             }
             throw new SocketTimeoutException(description);
-        }
-
-        Socket socket() {
-            return socket;
-        }
-
-        BufferedReader reader() {
-            return in;
         }
 
         @Override

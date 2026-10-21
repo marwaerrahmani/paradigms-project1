@@ -2,7 +2,7 @@
 
 Group chat over TCP sockets. One JavaFX server accepts many clients. Each client is a JavaFX window. The server stamps every message with the sender’s name and the time, then delivers it to every open connection.
 
-Author: `<Your Name>`
+Author: marwaerrahmani
 
 ## Requirements
 
@@ -16,7 +16,7 @@ Author: `<Your Name>`
 | `allUsers` returns the active list to that user only | `ChatServer.onCommand` |
 | Leave with `end`, `bye`, or LEAVE | `InputIntent`, LEAVE button |
 | Online label and circle | Client header |
-| Many clients at once, virtual threads | `ChatServer.acceptLoop`, `ClientSession` |
+| Many clients at once, virtual threads | `ChatServer.acceptLoop`, `WorkerThread` |
 | Broadcast with username and time | `ChatServer.onMessage` |
 | Live `ListView` of names, random background colors | `ServerView`, `ConnectedClient.colorHex` |
 | Log lines `Server Started`, `Waiting for Client`, `Welcome [User]` | `ChatServer` |
@@ -107,7 +107,7 @@ server.bindAddress=0.0.0.0
 
 ## How a session works
 
-1. The client connects and sends `JOIN|Alice`, or `JOIN|` when the username box is empty.
+1. The client connects with `new Socket` and sends `JOIN|Alice` through `writeUTF`, or `JOIN|` when the username box is empty. The server reads it with `readUTF`.
 2. The server replies `WELCOME|Alice|ACTIVE` or `WELCOME|Guest-1|READONLY`, logs `Welcome Alice`, and adds a colored row to the list.
 3. A chat line becomes `CHAT|12:04:01|Alice|hello` and is sent to every connection, including the sender.
 4. `allUsers` becomes `CMD|allUsers`. Only that client receives `USERS|Alice|Bob|Guest-1 (read-only)`.
@@ -132,7 +132,7 @@ classDiagram
   class ServerApplication
   class ServerView
   class ChatServer
-  class ClientSession
+  class WorkerThread
   class ServerListener
   class TCPClient
   class ClientView
@@ -145,7 +145,7 @@ classDiagram
   ServerApplication --> ChatServer
   ServerView ..|> ServerListener
   ChatServer --> ServerListener
-  ChatServer o-- ClientSession
+  ChatServer o-- WorkerThread
   ChatServer --> Protocol
   TCPClient --> ClientView
   ClientView ..|> ClientListener

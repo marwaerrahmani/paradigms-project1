@@ -24,9 +24,9 @@ package "tcp-server" {
     -acceptLoop()
     -broadcast(line)
   }
-  class ClientSession {
+  class WorkerThread {
     +run()
-    -send(line)
+    -send(msg)
   }
   class ConnectedClient {
     +displayName
@@ -101,10 +101,10 @@ ServerApplication --> ServerConfig
 ServerView ..|> ServerListener
 ServerView --> ChatServer : stop on close
 ChatServer --> ServerListener : notifies
-ChatServer "1" *-- "*" ClientSession : virtual thread
+ChatServer "1" *-- "*" WorkerThread : virtual thread
 ChatServer --> ConnectedClient
 ChatServer --> Protocol
-ClientSession --> ChatServer
+WorkerThread --> ChatServer
 ServerConfig --> ConfigFiles
 
 TCPClient --> ClientApplication

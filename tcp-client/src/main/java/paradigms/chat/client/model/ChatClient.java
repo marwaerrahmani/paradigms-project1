@@ -2,15 +2,12 @@ package paradigms.chat.client.model;
 
 import paradigms.chat.protocol.Protocol;
 
-import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -31,8 +28,8 @@ public final class ChatClient {
     private final Object writeLock = new Object();
 
     private Socket socket;
-    private BufferedReader in;
-    private PrintWriter out;
+    private DataInputStream dis;
+    private DataOutputStream dout;
     private volatile String failure;
     private volatile boolean welcomed;
     private volatile boolean readOnly;
@@ -59,9 +56,9 @@ public final class ChatClient {
         }
         opening.setTcpNoDelay(true);
         socket = opening;
-        in = new BufferedReader(new InputStreamReader(opening.getInputStream(), StandardCharsets.UTF_8));
+        dis = new DataInputStream(opening.getInputStream());
         synchronized (writeLock) {
-            out = new PrintWriter(new OutputStreamWriter(opening.getOutputStream(), StandardCharsets.UTF_8), true);
+            dout = new DataOutputStream(opening.getOutputStream());
         }
         Thread.ofVirtual().name("tcp-client-reader").start(this::readLoop);
         send(Protocol.join(username == null ? "" : username.trim()));
@@ -89,7 +86,7 @@ public final class ChatClient {
             return;
         }
         try {
-            if (out != null) {
+            if (dout != null) {
                 send(Protocol.command(Protocol.CMD_LEAVE));
             } else {
                 finish("Disconnected.");
@@ -144,11 +141,9 @@ public final class ChatClient {
 
     private void readLoop() {
         try {
-            String line;
-            while ((line = in.readLine()) != null) {
-                dispatch(line);
+            while (true) {
+                dispatch(dis.readUTF());
             }
-            finish(failure != null ? failure : "Connection closed.");
         } catch (IOException ex) {
             finish(failure != null ? failure : "Connection closed.");
         }
@@ -192,15 +187,13 @@ public final class ChatClient {
         fire(listener -> listener.onError(message));
     }
 
-    private void send(String line) throws IOException {
+    private void send(String msg) throws IOException {
         synchronized (writeLock) {
-            if (out == null) {
+            if (dout == null) {
                 throw new IOException("Not connected.");
             }
-            out.println(line);
-            if (out.checkError()) {
-                throw new IOException("The connection was lost.");
-            }
+            dout.writeUTF(msg);
+            dout.flush();
         }
     }
 

@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * Line-oriented chat protocol shared by TCPServer and TCPClient.
- * One UTF-8 line is one message. Fields are separated by {@code |}.
+ * Chat messages shared by TCPServer and TCPClient.
+ * One {@code writeUTF} / {@code readUTF} string is one message. Fields are separated by {@code |}.
  * Chat text may itself contain {@code |}; it is always the last field.
  */
 public final class Protocol {

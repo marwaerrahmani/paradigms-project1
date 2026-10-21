@@ -16,7 +16,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Accepts concurrent TCP clients and distributes chat lines.
+ * Accepts concurrent TCP clients and distributes chat messages.
  * Business logic lives here and does not reference JavaFX. The view observes
  * {@link ServerListener} and can be replaced without changing this class.
  */
@@ -33,7 +33,7 @@ public final class ChatServer {
     private final int requestedPort;
     private final List<ServerListener> listeners = new CopyOnWriteArrayList<>();
     private final Object stateLock = new Object();
-    private final Map<ClientSession, ConnectedClient> clients = new LinkedHashMap<>();
+    private final Map<WorkerThread, ConnectedClient> clients = new LinkedHashMap<>();
     private final AtomicInteger guestSequence = new AtomicInteger();
 
     private volatile boolean running;
@@ -78,7 +78,7 @@ public final class ChatServer {
     }
 
     public void stop() {
-        List<ClientSession> sessions;
+        List<WorkerThread> sessions;
         synchronized (stateLock) {
             if (!running) {
                 return;
@@ -87,7 +87,7 @@ public final class ChatServer {
             sessions = new ArrayList<>(clients.keySet());
             clients.clear();
         }
-        for (ClientSession session : sessions) {
+        for (WorkerThread session : sessions) {
             session.close();
         }
         closeServerSocket();
@@ -116,10 +116,10 @@ public final class ChatServer {
         log("Waiting for Client");
         while (running) {
             try {
-                Socket incoming = serverSocket.accept();
-                incoming.setTcpNoDelay(true);
-                ClientSession session = new ClientSession(incoming, this);
-                Thread.ofVirtual().name("tcp-client-" + incoming.getPort()).start(session);
+                Socket socketForClient = serverSocket.accept();
+                socketForClient.setTcpNoDelay(true);
+                WorkerThread task = new WorkerThread(socketForClient, this);
+                Thread.ofVirtual().start(task);
             } catch (IOException ex) {
                 if (running) {
                     log("Accept failed: " + ex.getMessage());
@@ -129,7 +129,7 @@ public final class ChatServer {
         }
     }
 
-    void handleLine(ClientSession session, String raw) {
+    void handleLine(WorkerThread session, String raw) {
         if (raw == null) {
             return;
         }
@@ -153,7 +153,7 @@ public final class ChatServer {
         }
     }
 
-    void onSessionClosed(ClientSession session) {
+    void onSessionClosed(WorkerThread session) {
         ConnectedClient removed;
         synchronized (stateLock) {
             removed = clients.remove(session);
@@ -169,7 +169,7 @@ public final class ChatServer {
         }
     }
 
-    private void join(ClientSession session, String rawName) {
+    private void join(WorkerThread session, String rawName) {
         String requested = rawName == null ? "" : rawName.trim();
         ConnectedClient client;
         String error;
@@ -213,7 +213,7 @@ public final class ChatServer {
         return null;
     }
 
-    private void onMessage(ClientSession session, String rawText) {
+    private void onMessage(WorkerThread session, String rawText) {
         ConnectedClient client = clientOf(session);
         if (client == null) {
             return;
@@ -235,7 +235,7 @@ public final class ChatServer {
         log(client.displayName() + ": " + text);
     }
 
-    private void onCommand(ClientSession session, String command) {
+    private void onCommand(WorkerThread session, String command) {
         ConnectedClient client = clientOf(session);
         if (client == null) {
             return;
@@ -253,18 +253,18 @@ public final class ChatServer {
         session.send(Protocol.error("Unknown command."));
     }
 
-    private void reject(ClientSession session, String error) {
+    private void reject(WorkerThread session, String error) {
         session.send(Protocol.error(error));
         session.close();
     }
 
-    private boolean isJoined(ClientSession session) {
+    private boolean isJoined(WorkerThread session) {
         synchronized (stateLock) {
             return clients.containsKey(session);
         }
     }
 
-    private ConnectedClient clientOf(ClientSession session) {
+    private ConnectedClient clientOf(WorkerThread session) {
         synchronized (stateLock) {
             return clients.get(session);
         }
@@ -282,12 +282,12 @@ public final class ChatServer {
         return color;
     }
 
-    private void broadcast(String line, ClientSession except) {
-        List<ClientSession> targets;
+    private void broadcast(String line, WorkerThread except) {
+        List<WorkerThread> targets;
         synchronized (stateLock) {
             targets = new ArrayList<>(clients.keySet());
         }
-        for (ClientSession session : targets) {
+        for (WorkerThread session : targets) {
             if (session != except) {
                 session.send(line);
             }

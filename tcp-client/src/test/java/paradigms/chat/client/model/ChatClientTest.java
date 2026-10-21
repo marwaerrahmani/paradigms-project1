@@ -3,14 +3,12 @@ package paradigms.chat.client.model;
 import org.junit.jupiter.api.Test;
 import paradigms.chat.protocol.Protocol;
 
-import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -120,16 +118,16 @@ class ChatClientTest {
     private static void serveActive(ServerSocket server, List<String> inbox) {
         try (Socket socket = server.accept()) {
             socket.setSoTimeout(3000);
-            BufferedReader in = reader(socket);
-            PrintWriter out = writer(socket);
-            inbox.add(in.readLine());
-            out.println(Protocol.welcome("Alice", false));
-            inbox.add(in.readLine());
-            out.println(Protocol.chat("12:00:00", "Alice", "hello"));
-            inbox.add(in.readLine());
-            out.println(Protocol.users(List.of("Alice", "Bob")));
-            inbox.add(in.readLine());
-            out.println(Protocol.bye());
+            DataInputStream dis = new DataInputStream(socket.getInputStream());
+            DataOutputStream dout = new DataOutputStream(socket.getOutputStream());
+            inbox.add(dis.readUTF());
+            write(dout, Protocol.welcome("Alice", false));
+            inbox.add(dis.readUTF());
+            write(dout, Protocol.chat("12:00:00", "Alice", "hello"));
+            inbox.add(dis.readUTF());
+            write(dout, Protocol.users(List.of("Alice", "Bob")));
+            inbox.add(dis.readUTF());
+            write(dout, Protocol.bye());
         } catch (IOException ex) {
             inbox.add("ERROR " + ex.getMessage());
         }
@@ -138,29 +136,30 @@ class ChatClientTest {
     private static void serveReadOnly(ServerSocket server, List<String> inbox) {
         try (Socket socket = server.accept()) {
             socket.setSoTimeout(3000);
-            BufferedReader in = reader(socket);
-            PrintWriter out = writer(socket);
-            inbox.add(in.readLine());
-            out.println(Protocol.welcome("Guest-1", true));
-            String line;
-            while ((line = in.readLine()) != null) {
-                inbox.add(line);
-                if (Protocol.command(Protocol.CMD_LEAVE).equals(line)) {
-                    out.println(Protocol.bye());
-                    break;
+            DataInputStream dis = new DataInputStream(socket.getInputStream());
+            DataOutputStream dout = new DataOutputStream(socket.getOutputStream());
+            inbox.add(dis.readUTF());
+            write(dout, Protocol.welcome("Guest-1", true));
+            try {
+                while (true) {
+                    String msg = dis.readUTF();
+                    inbox.add(msg);
+                    if (Protocol.command(Protocol.CMD_LEAVE).equals(msg)) {
+                        write(dout, Protocol.bye());
+                        break;
+                    }
                 }
+            } catch (EOFException ignored) {
+                // The client closed the socket.
             }
         } catch (IOException ex) {
             inbox.add("ERROR " + ex.getMessage());
         }
     }
 
-    private static BufferedReader reader(Socket socket) throws IOException {
-        return new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
-    }
-
-    private static PrintWriter writer(Socket socket) throws IOException {
-        return new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
+    private static void write(DataOutputStream dout, String msg) throws IOException {
+        dout.writeUTF(msg);
+        dout.flush();
     }
 
     private static void assertNoJavaFx(Path root) throws IOException {
